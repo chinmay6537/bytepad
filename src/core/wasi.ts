@@ -398,7 +398,7 @@ export function createWasi(options: WasiOptions) {
 
 /** Plain-language explanation for the traps beginners actually hit. */
 export function explainTrap(message: string): string {
-  if (/out of bounds/i.test(message)) return 'invalid memory access (a bad pointer or an array index out of range)';
+  if (/out of bounds/i.test(message)) return 'invalid memory access (a bad pointer, an array index out of range, or recursion that went too deep)';
   if (/call stack|stack overflow/i.test(message)) return 'stack overflow (recursion that never stops, or a very large local array)';
   if (/divide by zero/i.test(message)) return 'division by zero';
   if (/unreachable/i.test(message)) return 'the program aborted (abort(), a failed assert, or an uncaught exception)';

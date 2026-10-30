@@ -6,13 +6,17 @@ export default defineConfig({
   workers: 1,
   reporter: [['list']],
   use: {
-    baseURL: 'http://localhost:4173/',
-    channel: process.env.CI ? undefined : 'chrome',
+    baseURL: process.env.BASE_URL ?? 'http://localhost:4173/',
+    // Real Chrome, not Playwright's headless shell, which crashes when a WebAssembly program traps.
+    channel: 'chrome',
     viewport: { width: 1360, height: 860 },
   },
-  webServer: {
-    command: 'npx vite preview --port 4173 --strictPort',
-    url: 'http://localhost:4173/',
-    reuseExistingServer: true,
-  },
+  // Set BASE_URL to test a deployed site instead of the local build.
+  webServer: process.env.BASE_URL
+    ? undefined
+    : {
+        command: 'npx vite preview --port 4173 --strictPort',
+        url: 'http://localhost:4173/',
+        reuseExistingServer: true,
+      },
 });

@@ -51,6 +51,7 @@ Cloud languages send your code to Wandbox, a free third-party service, when you 
 - **No threads or sockets** in browser-run C and C++.
 - **Cloud languages can't take live input.** Enter it in the Input tab before pressing Run.
 - **The debugger is Python only.**
+- **Some C mistakes don't crash the way they do natively.** In WebAssembly, address 0 is valid memory, so reading a null pointer can return 0 instead of a segmentation fault. Integer division by zero is undefined behaviour and may also print a value. Don't rely on a browser run to catch these.
 - **`getch()` waits for Enter**, because terminal input is line based.
 - **The first C or C++ run downloads the compiler** (about 27 MB compressed), then it's cached. Python's core is about 6 MB.
 - **Autocomplete is richest for JavaScript and TypeScript.** Other languages get syntax highlighting and word-based suggestions.
@@ -73,7 +74,7 @@ npm run dev
 | `npm run dev` | Dev server with hot reload |
 | `npm run build` | Type-check and build the static site into `dist/` |
 | `npm test` | Unit tests |
-| `npx playwright install chromium`, then `npm run test:e2e` | Browser tests against the production build (run `npm run build` first) |
+| `npm run test:e2e` | Browser tests against the production build, using your installed Google Chrome (run `npm run build` first) |
 | `npm run test:cloud` | Check every cloud template against the real Wandbox service |
 
 `dist/` is plain static files, so it can be hosted anywhere. No special server headers are needed.

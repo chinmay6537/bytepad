@@ -14,8 +14,7 @@ npm run dev
 ```bash
 npm run build
 npm test
-npx playwright install chromium   # first time only
-npm run test:e2e
+npm run test:e2e                  # needs Google Chrome installed
 ```
 
 Browser tests run against the production build, so build first. `vite preview` deliberately sends no isolation
