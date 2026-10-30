@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bytepad</title>
+    <meta name="description" content="Open-source online compiler. Python, C, C++, JavaScript and TypeScript run in your browser with real interactive input. No signup, no ads." />
+    <meta name="theme-color" content="#15171b" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icon.svg" type="image/svg+xml" />
+    <script>
+      // Set before first paint so a light-theme user never sees a dark flash.
+      try {
+        const saved = localStorage.getItem('bytepad:theme');
+        const light = saved ? saved === 'light' : matchMedia('(prefers-color-scheme: light)').matches;
+        document.documentElement.dataset.theme = light ? 'light' : 'dark';
+      } catch {
+        document.documentElement.dataset.theme = 'dark';
+      }
+    </script>
+  </head>
+  <body>
+    <div id="app">
+      <header class="topbar">
+        <div class="brand"><img src="icon.svg" alt="" width="20" height="20" /><span>bytepad</span></div>
+        <label class="visually-hidden" for="language">Language</label>
+        <select id="language" class="control" data-testid="language"></select>
+        <span id="engine" class="engine" data-testid="engine"></span>
+        <div class="actions">
+          <button id="run" class="control primary" data-testid="run" title="Run (Ctrl/Cmd + Enter)" disabled>
+            <svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true"><path fill="currentColor" d="M2 1l9 5-9 5z" /></svg>
+            <span>Run</span>
+          </button>
+          <button id="debug" class="control" data-testid="debug" title="Debug step by step (Python)" disabled>Debug</button>
+          <button id="stop" class="control" data-testid="stop" disabled>Stop</button>
+        </div>
+        <div class="spacer"></div>
+        <div class="actions">
+          <button id="share" class="control" data-testid="share" title="Copy a link containing this project">Share</button>
+          <button id="download" class="control" title="Download the file, or a .zip for several">Download</button>
+          <button id="reset" class="control" title="Replace this project with the starter template">Reset</button>
+          <button id="theme" class="control icon" title="Switch theme" aria-label="Switch theme">◐</button>
+          <button id="help" class="control icon" title="Help and shortcuts" aria-label="Help">?</button>
+        </div>
+      </header>
+
+      <main class="workspace" id="workspace">
+        <aside class="files" aria-label="Project files">
+          <div class="files-head">
+            <span>Files</span>
+            <span class="files-buttons">
+              <button id="new-file" class="mini" title="New file" aria-label="New file" data-testid="new-file">+</button>
+              <button id="upload" class="mini" title="Upload files" aria-label="Upload files">↑</button>
+            </span>
+            <input id="upload-input" type="file" multiple hidden />
+          </div>
+          <ul id="file-list" data-testid="file-list"></ul>
+        </aside>
+
+        <section class="editor-pane" aria-label="Code editor"><div id="editor"></div></section>
+
+        <div id="resizer" class="resizer" role="separator" aria-orientation="vertical" aria-label="Resize output panel" tabindex="0"></div>
+
+        <section class="panel" aria-label="Program output and tools">
+          <div class="tabs" role="tablist">
+            <button role="tab" data-tab="terminal" data-testid="tab-terminal" aria-selected="true">Terminal</button>
+            <button role="tab" data-tab="input" data-testid="tab-input" aria-selected="false">Input</button>
+            <button role="tab" data-tab="tests" data-testid="tab-tests" aria-selected="false">Tests</button>
+            <button role="tab" data-tab="debugger" data-testid="tab-debugger" aria-selected="false">Debugger</button>
+          </div>
+
+          <div class="tab-body" data-body="terminal"><div id="terminal" data-testid="terminal"></div></div>
+
+          <div class="tab-body form" data-body="input" hidden>
+            <label for="stdin">Standard input <small id="stdin-hint"></small></label>
+            <textarea id="stdin" data-testid="stdin" rows="7" spellcheck="false"></textarea>
+            <label for="args">Program arguments</label>
+            <input id="args" data-testid="args" type="text" spellcheck="false" placeholder="--verbose input.txt" />
+            <div id="flags-row">
+              <label for="flags">Compiler flags</label>
+              <input id="flags" data-testid="flags" type="text" spellcheck="false" />
+            </div>
+            <div id="cloud-toggle-row" class="check">
+              <input id="use-cloud" data-testid="use-cloud" type="checkbox" />
+              <label for="use-cloud">Compile on Wandbox with GCC. Use this for threads or GCC-only features. Sends your code to wandbox.org and input cannot be typed live.</label>
+            </div>
+            <div id="compiler-row">
+              <label for="compiler">Compiler version</label>
+              <select id="compiler" class="control" data-testid="compiler"></select>
+            </div>
+            <details>
+              <summary>Self-hosted Piston server</summary>
+              <p class="muted">Cloud languages use Wandbox by default. To keep code on your own machines, enter the URL of a Piston server you run. The server must allow requests from this page (CORS).</p>
+              <label for="piston">Server URL</label>
+              <input id="piston" type="url" spellcheck="false" placeholder="http://localhost:2000" />
+            </details>
+          </div>
+
+          <div class="tab-body" data-body="tests" hidden>
+            <div class="tests-head">
+              <button id="run-tests" class="control primary" data-testid="run-tests">Run all</button>
+              <button id="add-test" class="control" data-testid="add-test">Add test</button>
+              <span id="tests-summary" class="muted" data-testid="tests-summary"></span>
+            </div>
+            <p id="tests-empty" class="muted">Give your program an input and the output you expect. Bytepad runs every case and shows the first line that differs. Trailing spaces and blank lines at the end are ignored.</p>
+            <div id="test-list"></div>
+          </div>
+
+          <div class="tab-body" data-body="debugger" hidden>
+            <div class="debug-controls">
+              <button id="dbg-continue" class="control" title="Continue (F5)" disabled>Continue</button>
+              <button id="dbg-over" class="control" data-testid="dbg-over" title="Step over (F10)" disabled>Over</button>
+              <button id="dbg-into" class="control" title="Step into (F11)" disabled>Into</button>
+              <button id="dbg-out" class="control" title="Step out (Shift+F11)" disabled>Out</button>
+            </div>
+            <p id="dbg-empty" class="muted">Available for Python. Click the margin beside a line number to set a breakpoint, then press Debug. Input typed in the Terminal tab still reaches your program.</p>
+            <div id="dbg-state" data-testid="dbg-state" hidden>
+              <h3>Variables</h3>
+              <table class="vars"><tbody id="dbg-vars"></tbody></table>
+              <h3>Call stack</h3>
+              <ol id="dbg-stack" class="stack"></ol>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="statusbar">
+        <span id="status" data-testid="status" role="status">Ready</span>
+        <span id="metrics" data-testid="metrics"></span>
+        <span class="spacer"></span>
+        <span id="cursor"></span>
+        <span id="saved" class="muted">Saved in this browser</span>
+        <a href="https://github.com/chinmay6537/bytepad" target="_blank" rel="noopener">GitHub</a>
+      </footer>
+    </div>
+
+    <dialog id="dialog" class="dialog"></dialog>
+    <div id="toast" class="toast" role="status" hidden></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
